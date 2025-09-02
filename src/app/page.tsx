@@ -3,18 +3,12 @@
 import { useSolanaWallet } from "@web3auth/modal/react/solana";
 import { useWeb3AuthConnect, useWeb3AuthDisconnect, useWeb3AuthUser } from "@web3auth/modal/react";
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input";
 import { CopyButton } from "@/components/CopyButton";
 import SolanaRecipientsForm from "@/components/SolanaRecipientsForm";
+import { truncateAddress } from "@/lib/utils";
+import { PublicKey } from "@solana/web3.js";
+import { useEffect, useState } from "react";
+
 
 export default function Home() {
 
@@ -22,14 +16,38 @@ export default function Home() {
   const { disconnect, loading: disconnectLoading, error: disconnectError } = useWeb3AuthDisconnect();
   const { userInfo } = useWeb3AuthUser();
   const { solanaWallet, accounts, connection } = useSolanaWallet();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
+
+  const fetchBalance = async () => {
+    if (connection && accounts && accounts.length > 0) {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const publicKey = new PublicKey(accounts[0]);
+        const balance = await connection.getBalance(publicKey);
+        setBalance(balance);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchBalance();
+  }, [connection, accounts]);
 
   const loggedInView = (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 gap-3">
       {/* <h2>Connected to {connectorName}</h2> */}
       <div className="flex w-full max-w-sm items-center gap-2">
-        <div className="text-md truncate">Address: {accounts?.[0] || "N/A"}</div>
+        <span className="text-md truncate">Your Address: {accounts?.length ? truncateAddress(accounts?.[0]) : "N/A"}</span>
         <CopyButton value={accounts?.[0] || ""} toastMessage="Address copied to clipboard" />
       </div>
+      <span>Your Balance: {balance ? balance / 1000000000 : "0"} SOL</span>
 
       <SolanaRecipientsForm />
       
