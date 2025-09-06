@@ -43,7 +43,7 @@ SplitPay is a simple Solana-based Web3 app that makes it easy to distribute SOL 
 
 1.  **Clone the repository:**
     
-    `git clone https://github.com/yourusername/splitpay.git cd splitpay` 
+    `git clone https://github.com/HusseinHato/metamask-solana-splitpay cd splitpay` 
     
 2.  **Install dependencies:**
     
