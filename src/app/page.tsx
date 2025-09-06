@@ -49,8 +49,8 @@ export default function Home() {
       </div>
       <span>Your Balance: {balance ? balance / 1000000000 : "0"} SOL</span>
 
-      <SolanaRecipientsForm />
-      
+      <SolanaRecipientsForm fetchBalance={fetchBalance} />
+
       <div>Connection: {connection ? "Connected" : "Not connected"}</div>
       <div className="flex flex-col gap-4 mt-4">
         <div>
@@ -66,6 +66,13 @@ export default function Home() {
 
   const unloggedInView = (
     <div className="grid grid-cols-1 gap-4">
+
+      <p className="text-xl mb-8 text-center">
+        SplitPay is a simple Web3-powered app that makes sending SOL to multiple people effortless. Instead of manually sending transactions one by one, SplitPay lets you distribute funds to up to 20 recipient addresses in a single step.
+      </p>
+
+      <p className="text-xl mb-8 text-center">Login to start sending SOL.</p>
+
       <Button onClick={() => connect()}>
         Login
       </Button>

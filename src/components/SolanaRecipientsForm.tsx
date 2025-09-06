@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { X, Plus } from "lucide-react"
 import {
-  Connection,
   PublicKey,
   SystemProgram,
   Transaction,
@@ -14,6 +13,16 @@ import {
   VersionedTransaction,
 } from "@solana/web3.js";
 import { useSolanaWallet, useSignAndSendTransaction } from "@web3auth/modal/react/solana";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter
+} from "@/components/ui/dialog"
+
+import { toast } from "sonner";
 
 type Recipient = { id: string; address: string; amount: string }
 export type SolanaRecipientsFormResult = {
@@ -65,10 +74,10 @@ function lamportsToSolString(lamports: bigint): string {
 function uuid() { return crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) }
 
 export default function SolanaRecipientsForm({
-  onSubmit,
+  fetchBalance,
   defaultRecipients,
 }: {
-  onSubmit?: (r: SolanaRecipientsFormResult) => void
+  fetchBalance: () => Promise<void>
   defaultRecipients?: Recipient[]
 }) {
   const [recipients, setRecipients] = useState<Recipient[]>(
@@ -79,6 +88,12 @@ export default function SolanaRecipientsForm({
   const [splitEvenly, setSplitEvenly] = useState(false)
   const [totalAmount, setTotalAmount] = useState("")
   const remaining = MAX_RECIPIENTS - recipients.length
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [preview, setPreview] = React.useState<{
+    feeLamports: number; // from RPC
+    userPaysLamports: bigint;
+    txInstructions: any[]; // stash to rebuild later
+  } | null>(null);
 
   // Validate "total" when split is ON
   const totalError = useMemo(() => {
@@ -174,7 +189,7 @@ export default function SolanaRecipientsForm({
         amountLamports: solToLamportsBigInt(r.amount.trim() || "0"),
       })),
     }
-    
+
     // onSubmit?.(result)
 
     const block = await connection!.getLatestBlockhash();
@@ -201,15 +216,71 @@ export default function SolanaRecipientsForm({
 
     const gasFee = await connection?.getFeeForMessage(finalTransaction.message);
     const gasFeeVal = gasFee?.value != null ? gasFee.value : 0;
-    const formattedGasFeeVal = Number(gasFeeVal) / 1_000_000_000;
-    const userPays = totalLamports + BigInt(gasFeeVal);
-    const formattedUserPays = Number(userPays) / 1_000_000_000;
+    // const formattedGasFeeVal = gasFeeVal / 1_000_000_000;
+    // const userPays = totalLamports + BigInt(gasFeeVal);
+    // const formattedUserPays = Number(userPays) / 1_000_000_000;
 
-    console.log(formattedUserPays);
-    console.log(totalSOL);
-    console.log(formattedGasFeeVal);
+    // console.log(gasFeeVal)
+    // console.log(formattedUserPays);
+    // console.log(totalSOL);
+    // console.log(formattedGasFeeVal);
+
+    setPreview({
+      feeLamports: gasFeeVal,
+      userPaysLamports: totalLamports + BigInt(gasFeeVal),
+      txInstructions: tx.instructions,
+    });
+
+    setConfirmOpen(true);
 
     // signAndSendTransaction(finalTransaction);
+  }
+
+  async function onConfirm() {
+    if (!accounts?.[0] || !preview) return;
+    const payer = new PublicKey(accounts[0]);
+
+    const block = await connection!.getLatestBlockhash();
+
+    const freshTx = new Transaction();
+    for (const ix of preview.txInstructions) freshTx.add(ix);
+
+    const transactionMessage = new TransactionMessage({
+      recentBlockhash: block.blockhash,
+      instructions: freshTx.instructions,
+      payerKey: new PublicKey(accounts![0]),
+    });
+
+    const finalTransaction = new VersionedTransaction(transactionMessage.compileToV0Message());
+
+
+    try {
+      const result = await signAndSendTransaction(finalTransaction);
+
+      toast.success("Transaction sent!", {
+        description: (
+          <a
+            href={`https://explorer.solana.com/tx/${result}?cluster=devnet`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-blue-600"
+          >
+            Tx Hash: {result?.slice(0, 8)}...{result?.slice(-8)}
+          </a>
+        ),
+        duration: 8000,
+      });
+
+    } catch (err: any) {
+      toast.error("Transaction failed", {
+        description: err.message ?? "Check console for details",
+      });
+    }
+
+    await fetchBalance();
+
+    setConfirmOpen(false);
+    // show toast / navigate / reset form
   }
 
   const totalLamports = useMemo(
@@ -221,6 +292,11 @@ export default function SolanaRecipientsForm({
     [recipients]
   )
   const totalSOL = Number(totalLamports) / 1_000_000_000
+  const feeSOL = preview ? preview.feeLamports / 1_000_000_000 : 0;
+  // console.log(feeSOL)
+  const userPaysSOL = preview ? Number(preview.userPaysLamports) / 1_000_000_000 : 0;
+  // console.log(userPaysSOL)
+
 
   return (
     <Card className="w-full max-w-3xl mx-auto">
@@ -326,23 +402,49 @@ export default function SolanaRecipientsForm({
             <div className="flex items-center gap-4">
               <div className="text-sm text-muted-foreground">
                 <span className="mr-1">Total:</span>
-                <span className="font-medium">{totalSOL.toLocaleString()} SOL</span>
+                <span className="font-medium">{totalSOL.toPrecision().toLocaleString()} SOL</span>
               </div>
               <Button type="submit" disabled={(splitEvenly && !!totalError) || hasRowErrors || isPending}>
                 {isPending ? "Confirming..." : "Send"}
               </Button>
 
-              {hash && (
-                <div className="text-sm text-muted-foreground">
-                  <span className="mr-1">Hash:</span>
-                  <span className="font-medium">{hash}</span>
-                </div>
-              )}
-              
               {error && <div className="text-sm text-red-500">Error: {error.message}</div>}
 
             </div>
           </div>
+
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirm Batch Transfer</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Total transfer</span>
+                  <span>{totalSOL.toPrecision().toLocaleString()} SOL</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Network fee (est.)</span>
+                  <span>{feeSOL.toPrecision().toLocaleString()} SOL</span>
+                </div>
+                <div className="flex justify-between font-semibold">
+                  <span>User pays</span>
+                  <span>{userPaysSOL.toPrecision().toLocaleString()} SOL</span>
+                </div>
+
+              </div>
+
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={isPending}>
+                  Cancel
+                </Button>
+                <Button onClick={onConfirm} disabled={isPending}>
+                  {isPending ? "Sending..." : "Confirm & Send"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </form>
       </CardContent>
     </Card>

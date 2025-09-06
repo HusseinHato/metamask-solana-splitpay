@@ -22,8 +22,8 @@ const web3AuthContextConfig: Web3AuthContextConfig = {
         ssr: true,
         // IMP END - SSR
         uiConfig: {
-            logoDark: "logoipsum-390-dark.svg",
-            logoLight: "logoipsum-390.svg",
+            logoDark: "splitpay-logo.png",
+            logoLight: "splitpay-logo.png",
         }
     }
 };

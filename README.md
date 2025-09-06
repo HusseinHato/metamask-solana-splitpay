@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SplitPay
 
-## Getting Started
+SplitPay is a simple Solana-based Web3 app that makes it easy to distribute SOL to multiple recipients in one go. It’s designed to lower the entry barrier to crypto by combining familiar social logins with the power of blockchain.
 
-First, run the development server:
+----------
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Project Goals & Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Goals**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+-   Make crypto more accessible to everyone with one-click, familiar login options.
+    
+-   Simplify sending SOL to multiple addresses in a single transaction.
+    
+-   Demonstrate how Web3Auth can be integrated with Solana dApps.
+    
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+**Key Features**
 
-## Learn More
+-   **Easy Authentication:** Login using Google, other social accounts, or a wallet directly via Web3Auth.
+    
+-   **Batch Payments:** Distribute SOL to up to 20 recipient addresses in one transaction.
+    
+-   **Flexible Splitting:** Choose between splitting evenly or customizing the amount for each recipient.
+    
+-   **Fast & Low-Cost:** Powered by Solana for quick and inexpensive transfers.
+    
 
-To learn more about Next.js, take a look at the following resources:
+----------
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔑 Web3Auth Integration
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+-   The app uses **Web3Auth React SDK** for authentication.
+    
+-   Authentication is combined with **Solana Web3.js** to sign and send transactions.
+    
+-   This allows users to log in with familiar credentials (Google, socials) or directly with their wallet, and still interact with Solana securely.
+    
 
-## Deploy on Vercel
+----------
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🛠️ Running the Demo
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1.  **Clone the repository:**
+    
+    `git clone https://github.com/yourusername/splitpay.git cd splitpay` 
+    
+2.  **Install dependencies:**
+    
+    `npm install` 
+    
+3.  **Run the development server:**
+    
+    `npm run dev` 
+    
+4.  **Open in browser:**  
+    Navigate to [http://localhost:3000](http://localhost:3000) to use the app.
